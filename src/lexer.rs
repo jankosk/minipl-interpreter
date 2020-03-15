@@ -24,11 +24,22 @@ impl Lexer {
         }
     }
 
+    fn peek(&self) -> Option<char> {
+        let pos = self.position + 1;
+        if self.source.len() > pos {
+            return Some(self.source.as_bytes()[pos] as char);
+        } else {
+            return None;
+        }
+    }
+
     fn read_identifier(&mut self) -> String {
         let mut identifier = String::new();
         while self.current_char != None && self.current_char.unwrap().is_alphabetic() {
             identifier.push(self.current_char.unwrap());
-            self.advance();
+            if self.peek().unwrap().is_alphabetic() {
+                self.advance();
+            }
         }
         return identifier;
     }
@@ -37,7 +48,9 @@ impl Lexer {
         let mut result = String::new();
         while self.current_char != None && self.current_char.unwrap().is_numeric() {
             result.push(self.current_char.unwrap());
-            self.advance();
+            if self.peek().unwrap().is_numeric() {
+                self.advance();
+            }
         }
         return result.parse::<i32>().unwrap();
     }
@@ -48,20 +61,16 @@ impl Lexer {
         }
     }
 
-    fn peek(&self) -> char {
-        let next = self.source.as_bytes()[self.position + 1] as char;
-        return next;
-    }
-
     pub fn get_next_token(&mut self) -> Token {
         self.skip_whitespace();
+
         let token = match self.current_char {
             Some(ch) => match ch {
                 '+' => Token::Plus,
                 '-' => Token::Minus,
                 ';' => Token::SemiColon,
                 ':' => {
-                    if self.peek() == '=' {
+                    if self.peek() == Some('=') {
                         self.advance();
                         Token::Assign
                     } else {
@@ -87,3 +96,39 @@ impl Lexer {
         token
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::lexer::Lexer;
+    use crate::token::Token;
+
+    #[test]
+    fn lex_tokens() {
+        let source = r#"
+            var x := 1 + 2;
+            x := 0;
+        "#;
+        let mut lexer = Lexer::new(&source);
+        let expected_tokens = vec![
+            Token::Var,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::IntegerConstant("1".to_string()),
+            Token::Plus,
+            Token::IntegerConstant("2".to_string()),
+            Token::SemiColon,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::IntegerConstant("0".to_string()),
+            Token::SemiColon,
+            Token::EOF
+        ];
+        for expected in expected_tokens {
+            let token = lexer.get_next_token();
+            println!("token: {}, expected: {}", &token, &expected);
+            assert_eq!(&token, &expected);
+        }
+    }
+
+}
+

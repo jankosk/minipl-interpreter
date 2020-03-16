@@ -1,7 +1,7 @@
 use std::fmt;
 
 pub struct Program {
-    statements: Vec<Statement>,
+    pub statements: Vec<Statement>,
 }
 
 pub enum Statement {
@@ -21,9 +21,8 @@ impl fmt::Display for Statement {
 pub enum Expression {
     Identifier(String),
     IntegerConstant(i32),
-    Unary(UnaryOperator, Expression),
-    Binary(Expression, BinaryOperator, Expression),
-    Print(Expression),
+    Unary(UnaryOperator, Box<Expression>),
+    Binary(Box<Expression>, BinaryOperator, Box<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -32,7 +31,7 @@ impl fmt::Display for Expression {
             Expression::Identifier(id) => write!(f, "{}", id),
             Expression::IntegerConstant(int) => write!(f, "{}", int),
             Expression::Unary(op, exp) => write!(f, "({} {})", op, exp),
-            Expression::Binary(exp, op, exp) => write!(f, "({}, {}, {})", exp, op, exp),
+            Expression::Binary(exp1, op, exp2) => write!(f, "({}, {}, {})", exp1, op, exp2),
         }
     }
 }
@@ -47,8 +46,8 @@ impl fmt::Display for UnaryOperator {
         let output = match self {
             UnaryOperator::Not => "!",
             UnaryOperator::And => "&",
-        }
-        write!(f, "{}", output);
+        };
+        write!(f, "{}", output)
     }
 }
 
@@ -66,7 +65,7 @@ impl fmt::Display for BinaryOperator {
             BinaryOperator::Minus => "-",
             BinaryOperator::Multiplication => "*",
             BinaryOperator::Division => "/",
-        }
-        write!(f, "{}", output);
+        };
+        write!(f, "{}", output)
     }
 }

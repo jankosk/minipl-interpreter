@@ -3,6 +3,8 @@ use std::fs;
 
 mod lexer;
 mod token;
+mod ast;
+mod parser;
 
 use lexer::Lexer;
 use token::Token;

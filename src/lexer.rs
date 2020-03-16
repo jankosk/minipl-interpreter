@@ -1,4 +1,4 @@
-use crate::token::{Token, lookup_identifier};
+use crate::token::{lookup_identifier, Token};
 
 pub struct Lexer {
     position: usize,
@@ -65,30 +65,28 @@ impl Lexer {
         self.skip_whitespace();
 
         let token = match self.current_char {
-            Some(ch) => match ch {
-                '+' => Token::Plus,
-                '-' => Token::Minus,
-                ';' => Token::SemiColon,
-                ':' => {
-                    if self.peek() == Some('=') {
-                        self.advance();
-                        Token::Assign
-                    } else {
-                        Token::Colon
-                    }
+            Some('+') => Token::Plus,
+            Some('-') => Token::Minus,
+            Some(';') => Token::SemiColon,
+            Some(':') => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    Token::Assign
+                } else {
+                    Token::Colon
                 }
-                ch => {
-                  if ch.is_alphabetic() {
-                      let lexeme = self.read_identifier();
-                      lookup_identifier(&lexeme)
-                  } else if ch.is_numeric() {
-                      let lexeme = self.read_integer();
-                      Token::IntegerConstant(lexeme.to_string())
-                  } else {
-                      panic!("Invalid character: {}", ch)
-                  }
+            }
+            Some(ch) => {
+                if ch.is_alphabetic() {
+                    let lexeme = self.read_identifier();
+                    lookup_identifier(&lexeme)
+                } else if ch.is_numeric() {
+                    let lexeme = self.read_integer();
+                    Token::IntegerConstant(lexeme.to_string())
+                } else {
+                    panic!("Invalid character: {}", ch)
                 }
-            },
+            }
             None => Token::EOF,
         };
 
@@ -107,6 +105,7 @@ mod tests {
         let source = r#"
             var x := 1 + 2;
             x := 0;
+            print x;
         "#;
         let mut lexer = Lexer::new(&source);
         let expected_tokens = vec![
@@ -121,7 +120,10 @@ mod tests {
             Token::Assign,
             Token::IntegerConstant("0".to_string()),
             Token::SemiColon,
-            Token::EOF
+            Token::Print,
+            Token::Identifier("x".to_string()),
+            Token::SemiColon,
+            Token::EOF,
         ];
         for expected in expected_tokens {
             let token = lexer.get_next_token();
@@ -129,6 +131,4 @@ mod tests {
             assert_eq!(&token, &expected);
         }
     }
-
 }
-

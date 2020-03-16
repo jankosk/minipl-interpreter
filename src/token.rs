@@ -8,6 +8,7 @@ pub enum Token {
     Minus,
     Assign,
     Var,
+    Print,
     Colon,
     SemiColon,
     EOF,
@@ -22,6 +23,7 @@ impl fmt::Display for Token {
             Token::Minus => "-",
             Token::Assign => ":=",
             Token::Var => "var",
+            Token::Print => "print",
             Token::Colon => ":",
             Token::SemiColon => ";",
             Token::EOF => "EOF",
@@ -33,6 +35,7 @@ impl fmt::Display for Token {
 pub fn lookup_identifier(lexeme: &str) -> Token {
     match lexeme {
         "var" => Token::Var,
+        "print" => Token::Print,
         id => Token::Identifier(String::from(id)),
     }
 }

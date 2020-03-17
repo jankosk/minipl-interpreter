@@ -27,32 +27,30 @@ impl Lexer {
     fn peek(&self) -> Option<char> {
         let pos = self.position + 1;
         if self.source.len() > pos {
-            return Some(self.source.as_bytes()[pos] as char);
+            Some(self.source.as_bytes()[pos] as char)
         } else {
-            return None;
+            None
         }
     }
 
     fn read_identifier(&mut self) -> String {
-        let mut identifier = String::new();
-        while self.current_char != None && self.current_char.unwrap().is_alphabetic() {
-            identifier.push(self.current_char.unwrap());
-            if self.peek().unwrap().is_alphabetic() {
-                self.advance();
-            }
+        let mut lexeme = String::new();
+        while self.peek() != None && self.peek().unwrap().is_alphabetic() {
+            lexeme.push(self.current_char.unwrap());
+            self.advance();
         }
-        return identifier;
+        lexeme.push(self.current_char.unwrap());
+        lexeme
     }
 
-    fn read_integer(&mut self) -> i32 {
-        let mut result = String::new();
-        while self.current_char != None && self.current_char.unwrap().is_numeric() {
-            result.push(self.current_char.unwrap());
-            if self.peek().unwrap().is_numeric() {
-                self.advance();
-            }
+    fn read_integer(&mut self) -> String {
+        let mut lexeme = String::new();
+        while self.peek() != None && self.peek().unwrap().is_numeric() {
+            lexeme.push(self.current_char.unwrap());
+            self.advance();
         }
-        return result.parse::<i32>().unwrap();
+        lexeme.push(self.current_char.unwrap());
+        lexeme
     }
 
     fn skip_whitespace(&mut self) {
@@ -82,7 +80,7 @@ impl Lexer {
                     lookup_identifier(&lexeme)
                 } else if ch.is_numeric() {
                     let lexeme = self.read_integer();
-                    Token::IntegerConstant(lexeme.to_string())
+                    Token::IntegerConstant(lexeme)
                 } else {
                     panic!("Invalid character: {}", ch)
                 }
@@ -128,7 +126,7 @@ mod tests {
         for expected in expected_tokens {
             let token = lexer.get_next_token();
             println!("token: {}, expected: {}", &token, &expected);
-            assert_eq!(&token, &expected);
+            assert_eq!(token, expected);
         }
     }
 }

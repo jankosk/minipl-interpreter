@@ -1,7 +1,8 @@
-use crate::ast::{Program, Statement, Expression, BinaryOperator};
+use crate::ast::{BinaryOperator, Expression, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::Token;
 
+#[derive(Debug)]
 pub enum ParseError {
     UnexpectedToken(Token),
 }
@@ -40,7 +41,7 @@ impl Parser {
         match self.get_current_token() {
             Token::Identifier(_) => self.parse_assignment(),
             Token::Var => self.parse_assignment(),
-            other => Err(ParseError::UnexpectedToken(other))
+            other => Err(ParseError::UnexpectedToken(other)),
         }
     }
 
@@ -51,14 +52,14 @@ impl Parser {
 
         let identifier = match self.current_token.clone() {
             Token::Identifier(id) => id,
-            _ => return Err(ParseError::UnexpectedToken(self.get_current_token()))
+            invalid => return Err(ParseError::UnexpectedToken(invalid)),
         };
+        self.next_token();
 
-        self.expect_token(Token::Assign, ParseError::UnexpectedToken)?;
+        self.expect_current_token(Token::Assign, ParseError::UnexpectedToken)?;
         self.next_token();
 
         let exp = self.parse_expression()?;
-        
         Ok(Statement::Assignment(identifier, exp))
     }
 
@@ -68,23 +69,30 @@ impl Parser {
             Token::Identifier(id) => Expression::Identifier(id),
             Token::IntegerConstant(value) => {
                 let constant = value.parse::<i32>().unwrap();
-                match self.peek_token.clone() {
+                self.next_token();
+                match self.get_current_token() {
                     Token::SemiColon => Expression::IntegerConstant(constant),
-                    _ => self.parse_binary(Expression::IntegerConstant(constant))?,
+                    Token::Plus => self.parse_binary(
+                        Expression::IntegerConstant(constant),
+                        BinaryOperator::Plus,
+                    )?,
+                    Token::Minus => self.parse_binary(
+                        Expression::IntegerConstant(constant),
+                        BinaryOperator::Minus,
+                    )?,
+                    invalid => return Err(ParseError::UnexpectedToken(invalid)),
                 }
-            },
-            _ => return Err(ParseError::UnexpectedToken(token))
+            }
+            _ => return Err(ParseError::UnexpectedToken(token)),
         };
         Ok(expression)
     }
 
-    fn parse_binary(&mut self, left_exp: Expression) -> ParseResult<Expression> {
-        let op = match self.get_peek_token() {
-            Token::Plus => BinaryOperator::Plus,
-            Token::Minus => BinaryOperator::Minus,
-            invalid => return Err(ParseError::UnexpectedToken(invalid))
-        };
-        self.next_token(); //current token is an operator
+    fn parse_binary(
+        &mut self,
+        left_exp: Expression,
+        op: BinaryOperator,
+    ) -> ParseResult<Expression> {
         self.next_token();
         let right_exp = self.parse_expression()?;
         let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
@@ -105,15 +113,41 @@ impl Parser {
         self.peek_token.clone()
     }
 
-    fn expect_token(
+    fn expect_current_token(
         &mut self,
         expected: Token,
-        err: fn(Token) -> ParseError
+        err: fn(Token) -> ParseError,
     ) -> ParseResult<()> {
         if expected == self.current_token {
             Ok(())
         } else {
             Err(err(self.get_current_token()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ast::{BinaryOperator, Expression, Statement};
+    use crate::lexer::Lexer;
+    use crate::parser::{ParseError, Parser};
+
+    #[test]
+    fn parse_assignment() -> Result<(), ParseError> {
+        let source = "var x := 1 + 2;";
+        let lexer = Lexer::new(&source);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program()?;
+        let expected = vec![Statement::Assignment(
+            "x".to_string(),
+            Expression::Binary(
+                Box::new(Expression::IntegerConstant(1)),
+                BinaryOperator::Plus,
+                Box::new(Expression::IntegerConstant(2)),
+            ),
+        )];
+        println!("{:?}", program.statements);
+        assert_eq!(program.statements, expected);
+        Ok(())
     }
 }

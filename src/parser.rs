@@ -41,6 +41,11 @@ impl Parser {
         match self.get_current_token() {
             Token::Identifier(_) => self.parse_assignment(),
             Token::Var => self.parse_assignment(),
+            Token::Print => {
+                self.next_token();
+                let exp = self.parse_expression()?;
+                Ok(Statement::Print(exp))
+            }
             other => Err(ParseError::UnexpectedToken(other)),
         }
     }
@@ -167,7 +172,28 @@ mod tests {
                 ),
             ),
         ];
-        println!("{:?}", program.statements);
+        assert_eq!(program.statements, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn parse_print() -> Result<(), ParseError> {
+        let source = "print 1; print 1 + 2;";
+        let lexer = Lexer::new(&source);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program()?;
+        let expected = vec![
+            Statement::Print(
+                Expression::IntegerConstant(1),
+            ),
+            Statement::Print(
+                Expression::Binary(
+                    Box::new(Expression::IntegerConstant(1)),
+                    BinaryOperator::Plus,
+                    Box::new(Expression::IntegerConstant(2))
+                )
+            )
+        ];
         assert_eq!(program.statements, expected);
         Ok(())
     }

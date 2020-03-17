@@ -66,26 +66,34 @@ impl Parser {
     fn parse_expression(&mut self) -> ParseResult<Expression> {
         let token = self.get_current_token();
         let expression = match token {
-            Token::Identifier(id) => Expression::Identifier(id),
-            Token::IntegerConstant(value) => {
-                let constant = value.parse::<i32>().unwrap();
+            Token::Identifier(id) => {
+                let left_exp = Expression::Identifier(id);
                 self.next_token();
                 match self.get_current_token() {
-                    Token::SemiColon => Expression::IntegerConstant(constant),
-                    Token::Plus => self.parse_binary(
-                        Expression::IntegerConstant(constant),
-                        BinaryOperator::Plus,
-                    )?,
-                    Token::Minus => self.parse_binary(
-                        Expression::IntegerConstant(constant),
-                        BinaryOperator::Minus,
-                    )?,
-                    invalid => return Err(ParseError::UnexpectedToken(invalid)),
+                    Token::SemiColon => left_exp,
+                    _ => self.parse_operator(left_exp)?,
+                }
+            }
+            Token::IntegerConstant(value) => {
+                let constant = value.parse::<i32>().unwrap();
+                let left_exp = Expression::IntegerConstant(constant);
+                self.next_token();
+                match self.get_current_token() {
+                    Token::SemiColon => left_exp,
+                    _ => self.parse_operator(left_exp)?,
                 }
             }
             _ => return Err(ParseError::UnexpectedToken(token)),
         };
         Ok(expression)
+    }
+
+    fn parse_operator(&mut self, left_exp: Expression) -> ParseResult<Expression> {
+        match self.get_current_token() {
+            Token::Plus => self.parse_binary(left_exp, BinaryOperator::Plus),
+            Token::Minus => self.parse_binary(left_exp, BinaryOperator::Minus),
+            invalid => return Err(ParseError::UnexpectedToken(invalid)),
+        }
     }
 
     fn parse_binary(
@@ -134,18 +142,31 @@ mod tests {
 
     #[test]
     fn parse_assignment() -> Result<(), ParseError> {
-        let source = "var x := 1 + 2;";
+        let source = "
+            var x := 1 + 2;
+            x := x - 1;
+        ";
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
-        let expected = vec![Statement::Assignment(
-            "x".to_string(),
-            Expression::Binary(
-                Box::new(Expression::IntegerConstant(1)),
-                BinaryOperator::Plus,
-                Box::new(Expression::IntegerConstant(2)),
+        let expected = vec![
+            Statement::Assignment(
+                "x".to_string(),
+                Expression::Binary(
+                    Box::new(Expression::IntegerConstant(1)),
+                    BinaryOperator::Plus,
+                    Box::new(Expression::IntegerConstant(2)),
+                ),
             ),
-        )];
+            Statement::Assignment(
+                "x".to_string(),
+                Expression::Binary(
+                    Box::new(Expression::Identifier("x".to_string())),
+                    BinaryOperator::Minus,
+                    Box::new(Expression::IntegerConstant(1)),
+                ),
+            ),
+        ];
         println!("{:?}", program.statements);
         assert_eq!(program.statements, expected);
         Ok(())

@@ -24,6 +24,8 @@ impl fmt::Display for Statement {
 pub enum Expression {
     Identifier(String),
     IntegerConstant(i32),
+    StringValue(String),
+    Boolean(bool),
     Unary(UnaryOperator, Box<Expression>),
     Binary(Box<Expression>, BinaryOperator, Box<Expression>),
 }
@@ -33,6 +35,8 @@ impl fmt::Display for Expression {
         match self {
             Expression::Identifier(id) => write!(f, "{}", id),
             Expression::IntegerConstant(int) => write!(f, "{}", int),
+            Expression::StringValue(s) => write!(f, "\"{}\"", s),
+            Expression::Boolean(b) => write!(f, "{}", b),
             Expression::Unary(op, exp) => write!(f, "({} {})", op, exp),
             Expression::Binary(exp1, op, exp2) => write!(f, "({}, {}, {})", exp1, op, exp2),
         }

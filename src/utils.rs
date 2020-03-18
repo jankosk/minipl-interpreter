@@ -1,8 +1,13 @@
 use std::fmt;
 use crate::token::Token;
 
+#[derive(Debug)]
 pub enum ParseError {
     UnexpectedToken(Token),
+    ExpectedColon(Token),
+    ExpectedTypeDefinition(Token),
+    ExpectedAssignment(Token),
+    ExpectedIdentifier(Token),
 }
 
 #[derive(Debug)]
@@ -27,5 +32,14 @@ impl fmt::Display for Type {
             Type::Integer(int) => write!(f, "{}", int),
             Type::String(s) => write!(f, "{}", s),
         }
+    }
+}
+
+pub fn is_type(token: &Token) -> bool {
+    match token {
+        Token::BooleanType => true,
+        Token::StringType => true,
+        Token::IntegerType => true,
+        _ => false,
     }
 }

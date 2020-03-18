@@ -130,6 +130,7 @@ mod tests {
             x := 0;
             print x;
             var y : string := "a\"hello\"b\nworld\\";
+            true
         "#;
         let mut lexer = Lexer::new(&source);
         let expected_tokens = vec![
@@ -156,6 +157,7 @@ mod tests {
             Token::Assign,
             Token::StringValue("a\"hello\"b\nworld\\".to_string()),
             Token::SemiColon,
+            Token::True,
             Token::EOF,
         ];
         for expected in expected_tokens {

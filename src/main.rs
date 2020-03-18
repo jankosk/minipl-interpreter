@@ -1,11 +1,14 @@
 use std::env;
 use std::fs;
 
-mod lexer;
-mod token;
 mod ast;
+mod evaluator;
+mod lexer;
 mod parser;
+mod token;
+mod utils;
 
+use evaluator::Evaluator;
 use lexer::Lexer;
 use parser::Parser;
 
@@ -18,12 +21,18 @@ fn main() {
     let lexer = Lexer::new(file);
     let mut parser = Parser::new(lexer);
 
-    let statements = match parser.parse_program() {
-        Ok(program) => program.statements,
-        Err(err) => panic!("Failed with error: {:?}", err)
+    let program = match parser.parse_program() {
+        Ok(program) => program,
+        Err(err) => panic!("Failed with error: {:?}", err),
     };
 
-    for statement in statements {
+    for statement in &program.statements {
         println!("{}", statement);
+    }
+
+    let mut evaluator = Evaluator::new(program);
+    match evaluator.evaluate_program() {
+        Ok(_) => println!("Success!"),
+        Err(err) => println!("Failed with error: {:?}", err),
     }
 }

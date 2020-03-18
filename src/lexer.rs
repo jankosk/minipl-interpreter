@@ -1,4 +1,4 @@
-use crate::token::{lookup_identifier, Token};
+use crate::token::{get_id_or_key_token, Token};
 
 pub struct Lexer {
     position: usize,
@@ -53,6 +53,27 @@ impl Lexer {
         lexeme
     }
 
+    fn read_string(&mut self) -> String {
+        let mut lexeme = String::new();
+        while self.current_char != None && self.current_char.unwrap() != '"' {
+            let current_char = self.current_char.unwrap();
+            if current_char == '\\' {
+                match self.peek() {
+                    Some('"') => lexeme.push('\"'),
+                    Some('\\') => lexeme.push('\\'),
+                    Some('n') => lexeme.push('\n'),
+                    Some('t') => lexeme.push('\t'),
+                    _ => panic!("Unknown character escape!"),
+                }
+                self.advance();
+            } else {
+                lexeme.push(current_char);
+            }
+            self.advance();
+        }
+        lexeme
+    }
+
     fn skip_whitespace(&mut self) {
         while self.current_char != None && self.current_char.unwrap().is_whitespace() {
             self.advance();
@@ -74,10 +95,14 @@ impl Lexer {
                     Token::Colon
                 }
             }
+            Some('"') => {
+                self.advance();
+                Token::StringValue(self.read_string())
+            }
             Some(ch) => {
                 if ch.is_alphabetic() {
                     let lexeme = self.read_identifier();
-                    lookup_identifier(&lexeme)
+                    get_id_or_key_token(&lexeme)
                 } else if ch.is_numeric() {
                     let lexeme = self.read_integer();
                     Token::IntegerConstant(lexeme)
@@ -101,14 +126,17 @@ mod tests {
     #[test]
     fn lex_tokens() {
         let source = r#"
-            var x := 1 + 2;
+            var x : int := 1 + 2;
             x := 0;
             print x;
+            var y : string := "a\"hello\"b\nworld\\";
         "#;
         let mut lexer = Lexer::new(&source);
         let expected_tokens = vec![
             Token::Var,
             Token::Identifier("x".to_string()),
+            Token::Colon,
+            Token::IntegerType,
             Token::Assign,
             Token::IntegerConstant("1".to_string()),
             Token::Plus,
@@ -120,6 +148,13 @@ mod tests {
             Token::SemiColon,
             Token::Print,
             Token::Identifier("x".to_string()),
+            Token::SemiColon,
+            Token::Var,
+            Token::Identifier("y".to_string()),
+            Token::Colon,
+            Token::StringType,
+            Token::Assign,
+            Token::StringValue("a\"hello\"b\nworld\\".to_string()),
             Token::SemiColon,
             Token::EOF,
         ];

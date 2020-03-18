@@ -4,6 +4,8 @@ use std::fmt;
 pub enum Token {
     Identifier(String),
     IntegerConstant(String),
+    StringValue(String),
+    Boolean(String),
     Plus,
     Minus,
     Assign,
@@ -11,6 +13,9 @@ pub enum Token {
     Print,
     Colon,
     SemiColon,
+    IntegerType,
+    StringType,
+    BooleanType,
     EOF,
 }
 
@@ -19,11 +24,16 @@ impl fmt::Display for Token {
         let output = match self {
             Token::Identifier(name) => name,
             Token::IntegerConstant(constant) => constant,
+            Token::Boolean(b) => b,
+            Token::StringValue(s) => s,
             Token::Plus => "+",
             Token::Minus => "-",
             Token::Assign => ":=",
             Token::Var => "var",
             Token::Print => "print",
+            Token::BooleanType => "bool",
+            Token::StringType => "string",
+            Token::IntegerType => "int",
             Token::Colon => ":",
             Token::SemiColon => ";",
             Token::EOF => "EOF",
@@ -32,10 +42,15 @@ impl fmt::Display for Token {
     }
 }
 
-pub fn lookup_identifier(lexeme: &str) -> Token {
+pub fn get_id_or_key_token(lexeme: &str) -> Token {
     match lexeme {
+        "true" => Token::Boolean(lexeme.to_string()),
+        "false" => Token::Boolean(lexeme.to_string()),
         "var" => Token::Var,
         "print" => Token::Print,
+        "bool" => Token::BooleanType,
+        "string" => Token::StringType,
+        "int" => Token::IntegerType,
         id => Token::Identifier(String::from(id)),
     }
 }

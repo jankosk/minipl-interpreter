@@ -1,4 +1,4 @@
-use crate::ast::{BinaryOperator, Expression, Program, Statement};
+use crate::ast::{BinaryOperator, Expression, Program, Statement, UnaryOperator};
 use crate::lexer::Lexer;
 use crate::token::Token;
 use crate::utils::{is_type, ParseError};
@@ -39,7 +39,9 @@ impl Parser {
             Token::Var => self.parse_assignment(),
             Token::Print => {
                 self.next_token();
-                let exp = self.parse_expression()?;
+                let exp = self.parse_expression(false)?;
+                self.next_token();
+                self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
                 Ok(Statement::Print(exp))
             }
             other => Err(ParseError::UnexpectedToken(other)),
@@ -65,61 +67,71 @@ impl Parser {
         self.expect_current_token(Token::Assign, ParseError::ExpectedAssignment)?;
         self.next_token();
 
-        let exp = self.parse_expression()?;
+        let exp = self.parse_expression(false)?;
+        self.next_token();
+        self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
+
         Ok(Statement::Assignment(identifier, exp))
     }
 
-    fn parse_expression(&mut self) -> ParseResult<Expression> {
-        let token = self.get_current_token();
-        let expression = match token {
-            Token::Identifier(id) => {
-                let left_exp = Expression::Identifier(id);
-                self.next_token();
-                self.parse_operator(left_exp)?
-            }
-            Token::IntegerConstant(value) => {
-                let constant = value.parse::<i32>().unwrap();
-                let left_exp = Expression::IntegerConstant(constant);
-                self.next_token();
-                self.parse_operator(left_exp)?
-            }
-            Token::StringValue(value) => {
-                let left_exp = Expression::StringValue(value);
-                self.next_token();
-                self.parse_operator(left_exp)?
-            }
-            Token::True => {
-                let left_exp = Expression::Boolean(true);
-                self.next_token();
-                self.parse_operator(left_exp)?
-            }
-            Token::False => {
-                let left_exp = Expression::Boolean(false);
-                self.next_token();
-                self.parse_operator(left_exp)?
-            }
-            _ => return Err(ParseError::UnexpectedToken(token)),
-        };
-        Ok(expression)
-    }
-
-    fn parse_operator(&mut self, left_exp: Expression) -> ParseResult<Expression> {
+    fn parse_expression(&mut self, is_nested: bool) -> ParseResult<Expression> {
         match self.get_current_token() {
-            Token::SemiColon => Ok(left_exp),
-            Token::Plus => self.parse_binary(left_exp, BinaryOperator::Plus),
-            Token::Minus => self.parse_binary(left_exp, BinaryOperator::Minus),
-            invalid => return Err(ParseError::UnexpectedToken(invalid)),
+            Token::And => self.parse_unary(UnaryOperator::And, is_nested),
+            Token::Not => self.parse_unary(UnaryOperator::Not, is_nested),
+            _ => self.parse_left(is_nested),
         }
     }
 
-    fn parse_binary(
-        &mut self,
-        left_exp: Expression,
-        op: BinaryOperator,
-    ) -> ParseResult<Expression> {
+    fn parse_left(&mut self, is_nested: bool) -> ParseResult<Expression> {
+        match self.get_current_token() {
+            Token::Identifier(id) => self.parse_right(Expression::Identifier(id), is_nested),
+            Token::IntegerConstant(int) => {
+                let exp = Expression::IntegerConstant(int.parse::<i32>().unwrap());
+                self.parse_right(exp, is_nested)
+            }
+            Token::StringValue(string) => {
+                self.parse_right(Expression::StringValue(string), is_nested)
+            }
+            Token::True => self.parse_right(Expression::Boolean(true), is_nested),
+            Token::False => self.parse_right(Expression::Boolean(false), is_nested),
+            Token::LeftBracket => {
+                self.next_token();
+                self.parse_expression(true)
+            }
+            invalid => Err(ParseError::ExpectedOperand(invalid)),
+        }
+    }
+
+    fn parse_right(&mut self, left: Expression, is_nested: bool) -> ParseResult<Expression> {
+        match self.peek_token {
+            Token::SemiColon => Ok(left),
+            Token::RightBracket if is_nested => {
+                self.next_token();
+                Ok(left)
+            }
+            _ => {
+                self.next_token();
+                self.parse_binary(left, is_nested)
+            }
+        }
+    }
+
+    fn parse_binary(&mut self, left_exp: Expression, is_nested: bool) -> ParseResult<Expression> {
+        let op = match self.get_current_token() {
+            Token::Plus => BinaryOperator::Plus,
+            Token::Minus => BinaryOperator::Minus,
+            invalid => return Err(ParseError::UnexpectedToken(invalid)),
+        };
         self.next_token();
-        let right_exp = self.parse_expression()?;
+        let right_exp = self.parse_left(is_nested)?;
         let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
+        Ok(exp)
+    }
+
+    fn parse_unary(&mut self, op: UnaryOperator, is_nested: bool) -> ParseResult<Expression> {
+        self.next_token();
+        let exp = self.parse_left(is_nested)?;
+        let exp = Expression::Unary(op, Box::new(exp));
         Ok(exp)
     }
 
@@ -140,10 +152,6 @@ impl Parser {
         self.current_token.clone()
     }
 
-    fn get_peek_token(&mut self) -> Token {
-        self.peek_token.clone()
-    }
-
     fn expect_current_token(
         &mut self,
         expected: Token,
@@ -159,7 +167,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{BinaryOperator, Expression, Statement};
+    use crate::ast::{BinaryOperator, Expression, Statement, UnaryOperator};
     use crate::lexer::Lexer;
     use crate::parser::{ParseError, Parser};
 
@@ -203,16 +211,34 @@ mod tests {
 
     #[test]
     fn parse_print() -> Result<(), ParseError> {
-        let source = "print 1; print 1 + 2;";
+        let source = r#"
+            print "hello";
+            print 1 + 2;
+            print !true;
+            print 1 + (2 + 3);
+        "#;
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         let expected = vec![
-            Statement::Print(Expression::IntegerConstant(1)),
+            Statement::Print(Expression::StringValue("hello".to_string())),
             Statement::Print(Expression::Binary(
                 Box::new(Expression::IntegerConstant(1)),
                 BinaryOperator::Plus,
                 Box::new(Expression::IntegerConstant(2)),
+            )),
+            Statement::Print(Expression::Unary(
+                UnaryOperator::Not,
+                Box::new(Expression::Boolean(true)),
+            )),
+            Statement::Print(Expression::Binary(
+                Box::new(Expression::IntegerConstant(1)),
+                BinaryOperator::Plus,
+                Box::new(Expression::Binary(
+                    Box::new(Expression::IntegerConstant(2)),
+                    BinaryOperator::Plus,
+                    Box::new(Expression::IntegerConstant(3)),
+                )),
             )),
         ];
         assert_eq!(program.statements, expected);

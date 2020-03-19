@@ -87,6 +87,10 @@ impl Lexer {
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
             Some(';') => Token::SemiColon,
+            Some('&') => Token::And,
+            Some('!') => Token::Not,
+            Some('(') => Token::LeftBracket,
+            Some(')') => Token::RightBracket,
             Some(':') => {
                 if self.peek() == Some('=') {
                     self.advance();
@@ -126,11 +130,11 @@ mod tests {
     #[test]
     fn lex_tokens() {
         let source = r#"
-            var x : int := 1 + 2;
+            var x : int := 1 + (2 - 1);
             x := 0;
             print x;
             var y : string := "a\"hello\"b\nworld\\";
-            true
+            !true & false
         "#;
         let mut lexer = Lexer::new(&source);
         let expected_tokens = vec![
@@ -141,7 +145,11 @@ mod tests {
             Token::Assign,
             Token::IntegerConstant("1".to_string()),
             Token::Plus,
+            Token::LeftBracket,
             Token::IntegerConstant("2".to_string()),
+            Token::Minus,
+            Token::IntegerConstant("1".to_string()),
+            Token::RightBracket,
             Token::SemiColon,
             Token::Identifier("x".to_string()),
             Token::Assign,
@@ -157,7 +165,10 @@ mod tests {
             Token::Assign,
             Token::StringValue("a\"hello\"b\nworld\\".to_string()),
             Token::SemiColon,
+            Token::Not,
             Token::True,
+            Token::And,
+            Token::False,
             Token::EOF,
         ];
         for expected in expected_tokens {

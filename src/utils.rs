@@ -8,6 +8,8 @@ pub enum ParseError {
     ExpectedTypeDefinition(Token),
     ExpectedAssignment(Token),
     ExpectedIdentifier(Token),
+    ExpectedOperand(Token),
+    ExpectedSemiColon(Token),
 }
 
 #[derive(Debug)]

@@ -8,7 +8,7 @@ pub struct Program {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Assignment(String, Expression),
-    Print(Expression)
+    Print(Expression),
 }
 
 impl fmt::Display for Statement {

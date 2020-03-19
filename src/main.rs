@@ -23,7 +23,7 @@ fn main() {
 
     let program = match parser.parse_program() {
         Ok(program) => program,
-        Err(err) => panic!("Failed with error: {:?}", err),
+        Err(err) => panic!("Syntax Error: {:?}", err),
     };
 
     for statement in &program.statements {

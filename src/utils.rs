@@ -1,7 +1,7 @@
-use std::fmt;
 use crate::token::Token;
+use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseError {
     UnexpectedToken(Token),
     ExpectedColon(Token),
@@ -10,6 +10,7 @@ pub enum ParseError {
     ExpectedIdentifier(Token),
     ExpectedOperand(Token),
     ExpectedSemiColon(Token),
+    ExpectedClosingBracket(Token),
 }
 
 #[derive(Debug)]

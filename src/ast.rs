@@ -1,3 +1,4 @@
+use crate::utils::Type;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -7,6 +8,7 @@ pub struct Program {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
+    NewAssignment(String, Type, Expression),
     Assignment(String, Expression),
     Print(Expression),
 }
@@ -14,7 +16,10 @@ pub enum Statement {
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Statement::Assignment(id, exp) => write!(f, "var {} := {};", id, exp),
+            Statement::NewAssignment(id, type_def, exp) => {
+                write!(f, "var {} : {} := {};", id, type_def, exp)
+            }
+            Statement::Assignment(id, exp) => write!(f, "{} := {};", id, exp),
             Statement::Print(exp) => write!(f, "print {};", exp),
         }
     }

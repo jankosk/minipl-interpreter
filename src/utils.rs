@@ -21,28 +21,36 @@ pub enum EvalError {
     SyntaxError,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Type {
-    Bool(bool),
-    String(String),
-    Integer(i32),
+    Boolean,
+    String,
+    Integer,
 }
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Type::Bool(b) => write!(f, "{}", b),
-            Type::Integer(int) => write!(f, "{}", int),
-            Type::String(s) => write!(f, "{}", s),
+            Type::Boolean => write!(f, "bool"),
+            Type::String => write!(f, "string"),
+            Type::Integer => write!(f, "int"),
         }
     }
 }
 
-pub fn is_type(token: &Token) -> bool {
-    match token {
-        Token::BooleanType => true,
-        Token::StringType => true,
-        Token::IntegerType => true,
-        _ => false,
+#[derive(Clone, Debug, PartialEq)]
+pub enum Value {
+    Bool(bool),
+    String(String),
+    Integer(i32),
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Integer(int) => write!(f, "{}", int),
+            Value::String(s) => write!(f, "{}", s),
+        }
     }
 }

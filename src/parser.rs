@@ -1,7 +1,7 @@
 use crate::ast::{BinaryOperator, Expression, Program, Statement, UnaryOperator};
 use crate::lexer::Lexer;
 use crate::token::Token;
-use crate::utils::{is_type, ParseError};
+use crate::utils::{ParseError, Type};
 
 type ParseResult<T> = Result<T, ParseError>;
 
@@ -36,7 +36,7 @@ impl Parser {
     fn parse_statement(&mut self) -> ParseResult<Statement> {
         match self.get_current_token() {
             Token::Identifier(_) => self.parse_assignment(),
-            Token::Var => self.parse_assignment(),
+            Token::Var => self.parse_new_assignment(),
             Token::Print => {
                 self.next_token();
                 let exp = self.parse_expression(false)?;
@@ -49,21 +49,9 @@ impl Parser {
     }
 
     fn parse_assignment(&mut self) -> ParseResult<Statement> {
-        let identifier;
-        if self.current_token == Token::Var {
-            self.next_token();
-            identifier = self.parse_identifier()?;
-            self.next_token();
-            self.expect_current_token(Token::Colon, ParseError::ExpectedColon)?;
-            self.next_token();
-            match is_type(&self.current_token) {
-                true => self.next_token(),
-                _ => return Err(ParseError::ExpectedTypeDefinition(self.get_current_token())),
-            }
-        } else {
-            identifier = self.parse_identifier()?;
-            self.next_token();
-        }
+        let identifier = self.parse_identifier()?;
+        self.next_token();
+
         self.expect_current_token(Token::Assign, ParseError::ExpectedAssignment)?;
         self.next_token();
 
@@ -72,6 +60,29 @@ impl Parser {
         self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
 
         Ok(Statement::Assignment(identifier, exp))
+    }
+
+    fn parse_new_assignment(&mut self) -> ParseResult<Statement> {
+        self.next_token();
+        let identifier = self.parse_identifier()?;
+        self.next_token();
+        self.expect_current_token(Token::Colon, ParseError::ExpectedColon)?;
+        self.next_token();
+
+        let type_def = match self.get_current_token() {
+            Token::BooleanType => Type::Boolean,
+            Token::IntegerType => Type::Integer,
+            Token::StringType => Type::String,
+            invalid => return Err(ParseError::ExpectedTypeDefinition(invalid)),
+        };
+        self.next_token();
+        self.expect_current_token(Token::Assign, ParseError::ExpectedAssignment)?;
+        self.next_token();
+
+        let exp = self.parse_expression(false)?;
+        self.next_token();
+        self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
+        Ok(Statement::NewAssignment(identifier, type_def, exp))
     }
 
     fn parse_expression(&mut self, is_nested: bool) -> ParseResult<Expression> {
@@ -173,6 +184,7 @@ mod tests {
     use crate::lexer::Lexer;
     use crate::parser::{ParseError, Parser};
     use crate::token::Token;
+    use crate::utils::Type;
 
     #[test]
     fn parse_assignment() -> Result<(), ParseError> {
@@ -186,8 +198,9 @@ mod tests {
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         let expected = vec![
-            Statement::Assignment(
+            Statement::NewAssignment(
                 "x".to_string(),
+                Type::Integer,
                 Expression::Binary(
                     Box::new(Expression::IntegerConstant(1)),
                     BinaryOperator::Plus,
@@ -202,11 +215,12 @@ mod tests {
                     Box::new(Expression::IntegerConstant(1)),
                 ),
             ),
-            Statement::Assignment(
+            Statement::NewAssignment(
                 "y".to_string(),
+                Type::String,
                 Expression::StringValue("hello".to_string()),
             ),
-            Statement::Assignment("z".to_string(), Expression::Boolean(true)),
+            Statement::NewAssignment("z".to_string(), Type::Boolean, Expression::Boolean(true)),
         ];
         assert_eq!(program.statements, expected);
         Ok(())

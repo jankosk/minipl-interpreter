@@ -96,6 +96,10 @@ impl Evaluator {
                 BinaryOperator::And => Ok(Value::Bool(bool1 && bool2)),
                 _ => Err(EvalError::UnsupportedOperation),
             },
+            (Value::String(str1), Value::String(str2)) => match op {
+                BinaryOperator::Plus => Ok(Value::String(str1 + &str2)),
+                _ => Err(EvalError::UnsupportedOperation),
+            },
             _ => Err(EvalError::MismatchedTypes),
         }
     }

@@ -48,14 +48,16 @@ impl Evaluator {
     }
 
     fn evaluate_assignment(&mut self, identifier: &String, exp: &Expression) -> EvalResult<()> {
-        match self.global_scope.get(identifier) {
-            Some((typ_def, _)) => {
+        let tuple = match self.global_scope.get(identifier) {
+            Some((type_def, _)) => {
                 let val = self.evaluate_expression(exp)?;
-                self.check_type_conformance(typ_def, &val)?;
-                Ok(())
+                self.check_type_conformance(type_def, &val)?;
+                (type_def.clone(), val.clone())
             }
-            None => Err(EvalError::VariableNotInitialized(identifier.clone())),
-        }
+            None => return Err(EvalError::VariableNotInitialized(identifier.clone())),
+        };
+        self.global_scope.insert(identifier.clone(), tuple);
+        Ok(())
     }
 
     fn evaluate_print(&self, exp: &Expression) -> EvalResult<()> {
@@ -90,6 +92,8 @@ impl Evaluator {
             (Value::Integer(val1), Value::Integer(val2)) => match op {
                 BinaryOperator::Plus => Ok(Value::Integer(val1 + val2)),
                 BinaryOperator::Minus => Ok(Value::Integer(val1 - val2)),
+                BinaryOperator::Multiplication => Ok(Value::Integer(val1 * val2)),
+                BinaryOperator::Division => Ok(Value::Integer(val1 / val2)),
                 _ => Err(EvalError::UnsupportedOperation),
             },
             (Value::Bool(bool1), Value::Bool(bool2)) => match op {

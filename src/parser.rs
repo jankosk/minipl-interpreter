@@ -113,6 +113,10 @@ impl Parser {
                 match self.get_current_token() {
                     Token::Plus => self.parse_right(left, BinaryOperator::Plus, is_nested),
                     Token::Minus => self.parse_right(left, BinaryOperator::Minus, is_nested),
+                    Token::Multiplication => {
+                        self.parse_right(left, BinaryOperator::Multiplication, is_nested)
+                    }
+                    Token::Division => self.parse_right(left, BinaryOperator::Division, is_nested),
                     Token::And => self.parse_right(left, BinaryOperator::And, is_nested),
                     invalid => Err(ParseError::UnexpectedToken(invalid)),
                 }
@@ -182,9 +186,9 @@ impl Parser {
 mod tests {
     use crate::ast::{BinaryOperator, Expression, Statement, UnaryOperator};
     use crate::lexer::Lexer;
-    use crate::parser::{ParseError, Parser};
+    use crate::parser::Parser;
     use crate::token::Token;
-    use crate::utils::Type;
+    use crate::utils::{Type, ParseError};
 
     #[test]
     fn parse_assignment() -> Result<(), ParseError> {
@@ -240,7 +244,7 @@ mod tests {
             print "hello";
             print 1 + 2;
             print !true;
-            print 1 + (2 + (3 - 2));
+            print 1 + (2 / (3 * 2));
         "#;
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
@@ -262,10 +266,10 @@ mod tests {
                 BinaryOperator::Plus,
                 Box::new(Expression::Binary(
                     Box::new(Expression::IntegerConstant(2)),
-                    BinaryOperator::Plus,
+                    BinaryOperator::Division,
                     Box::new(Expression::Binary(
                         Box::new(Expression::IntegerConstant(3)),
-                        BinaryOperator::Minus,
+                        BinaryOperator::Multiplication,
                         Box::new(Expression::IntegerConstant(2)),
                     )),
                 )),

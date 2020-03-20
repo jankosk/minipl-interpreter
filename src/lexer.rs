@@ -86,6 +86,8 @@ impl Lexer {
         let token = match self.current_char {
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
+            Some('*') => Token::Multiplication,
+            Some('/') => Token::Division,
             Some(';') => Token::SemiColon,
             Some('&') => Token::And,
             Some('!') => Token::Not,

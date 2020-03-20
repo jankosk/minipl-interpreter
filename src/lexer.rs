@@ -93,6 +93,14 @@ impl Lexer {
             Some('!') => Token::Not,
             Some('(') => Token::LeftBracket,
             Some(')') => Token::RightBracket,
+            Some('.') => {
+                if self.peek() == Some('.') {
+                    self.advance();
+                    Token::Range
+                } else {
+                    Token::Illegal
+                }
+            }
             Some(':') => {
                 if self.peek() == Some('=') {
                     self.advance();
@@ -113,7 +121,7 @@ impl Lexer {
                     let lexeme = self.read_integer();
                     Token::IntegerConstant(lexeme)
                 } else {
-                    panic!("Invalid character: {}", ch)
+                    Token::Illegal
                 }
             }
             None => Token::EOF,
@@ -137,6 +145,9 @@ mod tests {
             print x;
             var y : string := "a\"hello\"b\nworld\\";
             !true & false
+            for x in 0..10 do
+                print x;
+            end for
         "#;
         let mut lexer = Lexer::new(&source);
         let expected_tokens = vec![
@@ -171,6 +182,18 @@ mod tests {
             Token::True,
             Token::And,
             Token::False,
+            Token::For,
+            Token::Identifier("x".to_string()),
+            Token::In,
+            Token::IntegerConstant("0".to_string()),
+            Token::Range,
+            Token::IntegerConstant("10".to_string()),
+            Token::Do,
+            Token::Print,
+            Token::Identifier("x".to_string()),
+            Token::SemiColon,
+            Token::End,
+            Token::For,
             Token::EOF,
         ];
         for expected in expected_tokens {

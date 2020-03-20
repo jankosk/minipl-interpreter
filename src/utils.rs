@@ -11,6 +11,10 @@ pub enum ParseError {
     ExpectedOperand(Token),
     ExpectedSemiColon(Token),
     ExpectedClosingBracket(Token),
+    ExpectedIn(Token),
+    ExpectedDo(Token),
+    ExpectedRange(Token),
+    ExpectedFor(Token),
 }
 
 #[derive(Debug)]

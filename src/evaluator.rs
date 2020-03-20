@@ -31,6 +31,7 @@ impl Evaluator {
             }
             Statement::Assignment(id, exp) => self.evaluate_assignment(id, exp),
             Statement::Print(exp) => self.evaluate_print(exp),
+            _ => panic!("not supported!"),
         }
     }
 

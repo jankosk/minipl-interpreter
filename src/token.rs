@@ -17,6 +17,11 @@ pub enum Token {
     False,
     And,
     Not,
+    For,
+    In,
+    Do,
+    End,
+    Range,
     LeftBracket,
     RightBracket,
     SemiColon,
@@ -24,6 +29,7 @@ pub enum Token {
     StringType,
     BooleanType,
     EOF,
+    Illegal,
 }
 
 impl fmt::Display for Token {
@@ -39,6 +45,11 @@ impl fmt::Display for Token {
             Token::Assign => ":=",
             Token::Var => "var",
             Token::Print => "print",
+            Token::For => "for",
+            Token::In => "in",
+            Token::Do => "do",
+            Token::End => "end",
+            Token::Range => "..",
             Token::True => "true",
             Token::False => "false",
             Token::And => "&",
@@ -51,6 +62,7 @@ impl fmt::Display for Token {
             Token::Colon => ":",
             Token::SemiColon => ";",
             Token::EOF => "EOF",
+            Token::Illegal => "Illegal Token!",
         };
         write!(f, "{}", output)
     }
@@ -58,6 +70,10 @@ impl fmt::Display for Token {
 
 pub fn get_id_or_key_token(lexeme: &str) -> Token {
     match lexeme {
+        "for" => Token::For,
+        "in" => Token::In,
+        "do" => Token::Do,
+        "end" => Token::End,
         "true" => Token::True,
         "false" => Token::False,
         "var" => Token::Var,

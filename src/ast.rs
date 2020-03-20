@@ -11,6 +11,7 @@ pub enum Statement {
     NewAssignment(String, Type, Expression),
     Assignment(String, Expression),
     Print(Expression),
+    For(String, Expression, Expression, Vec<Box<Statement>>),
 }
 
 impl fmt::Display for Statement {
@@ -21,6 +22,18 @@ impl fmt::Display for Statement {
             }
             Statement::Assignment(id, exp) => write!(f, "{} := {};", id, exp),
             Statement::Print(exp) => write!(f, "print {};", exp),
+            Statement::For(id, exp1, exp2, stmts) => {
+                let statements = stmts
+                    .iter()
+                    .map(|stmt| format!("\t{}", stmt))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                write!(
+                    f,
+                    "for {} in {}..{} do\n{}\nend for",
+                    id, exp1, exp2, statements
+                )
+            }
         }
     }
 }

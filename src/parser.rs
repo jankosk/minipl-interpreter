@@ -44,16 +44,45 @@ impl Parser {
                 self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
                 Ok(Statement::Print(exp))
             }
+            Token::For => self.parse_for(),
             other => Err(ParseError::UnexpectedToken(other)),
         }
+    }
+
+    fn parse_for(&mut self) -> ParseResult<Statement> {
+        self.next_token();
+        let identifier = self.parse_identifier()?;
+        self.next_token();
+        self.expect_and_advance(Token::In, ParseError::ExpectedIn)?;
+
+        let exp1 = self.parse_expression(false)?;
+        self.next_token();
+        self.expect_and_advance(Token::Range, ParseError::ExpectedRange)?;
+
+        let exp2 = self.parse_expression(false)?;
+        self.next_token();
+
+        self.expect_and_advance(Token::Do, ParseError::ExpectedDo)?;
+
+        let mut stmts: Vec<Box<Statement>> = Vec::new();
+        while self.current_token != Token::End {
+            let stmt = self.parse_statement()?;
+            stmts.push(Box::new(stmt));
+            self.next_token();
+        }
+        self.next_token();
+
+        self.expect_and_advance(Token::For, ParseError::ExpectedFor)?;
+        self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
+
+        Ok(Statement::For(identifier, exp1, exp2, stmts))
     }
 
     fn parse_assignment(&mut self) -> ParseResult<Statement> {
         let identifier = self.parse_identifier()?;
         self.next_token();
 
-        self.expect_current_token(Token::Assign, ParseError::ExpectedAssignment)?;
-        self.next_token();
+        self.expect_and_advance(Token::Assign, ParseError::ExpectedAssignment)?;
 
         let exp = self.parse_expression(false)?;
         self.next_token();
@@ -66,8 +95,8 @@ impl Parser {
         self.next_token();
         let identifier = self.parse_identifier()?;
         self.next_token();
-        self.expect_current_token(Token::Colon, ParseError::ExpectedColon)?;
-        self.next_token();
+
+        self.expect_and_advance(Token::Colon, ParseError::ExpectedColon)?;
 
         let type_def = match self.get_current_token() {
             Token::BooleanType => Type::Boolean,
@@ -76,9 +105,8 @@ impl Parser {
             invalid => return Err(ParseError::ExpectedTypeDefinition(invalid)),
         };
         self.next_token();
-        self.expect_current_token(Token::Assign, ParseError::ExpectedAssignment)?;
-        self.next_token();
 
+        self.expect_and_advance(Token::Assign, ParseError::ExpectedAssignment)?;
         let exp = self.parse_expression(false)?;
         self.next_token();
         self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
@@ -108,6 +136,9 @@ impl Parser {
         match self.peek_token {
             Token::SemiColon => Ok(left),
             Token::RightBracket if is_nested => Ok(left),
+            Token::Range => Ok(left),
+            Token::Do => Ok(left),
+            Token::End => Ok(left),
             _ => {
                 self.next_token();
                 match self.get_current_token() {
@@ -169,6 +200,16 @@ impl Parser {
         self.current_token.clone()
     }
 
+    fn expect_and_advance(
+        &mut self,
+        expected: Token,
+        err: fn(Token) -> ParseError,
+    ) -> ParseResult<()> {
+        self.expect_current_token(expected, err)?;
+        self.next_token();
+        Ok(())
+    }
+
     fn expect_current_token(
         &mut self,
         expected: Token,
@@ -188,7 +229,7 @@ mod tests {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::token::Token;
-    use crate::utils::{Type, ParseError};
+    use crate::utils::{ParseError, Type};
 
     #[test]
     fn parse_assignment() -> Result<(), ParseError> {
@@ -275,6 +316,33 @@ mod tests {
                 )),
             )),
         ];
+        assert_eq!(program.statements, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn parse_for() -> Result<(), ParseError> {
+        let source = r#"
+            for x in 1..5 do
+                print x;
+                print "hello";
+            end for;
+        "#;
+        let lexer = Lexer::new(&source);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program()?;
+        let expected = vec![Statement::For(
+            "x".to_string(),
+            Expression::IntegerConstant(1),
+            Expression::IntegerConstant(5),
+            vec![
+                Box::new(Statement::Print(Expression::Identifier("x".to_string()))),
+                Box::new(Statement::Print(Expression::StringValue(
+                    "hello".to_string(),
+                ))),
+            ],
+        )];
+        println!("{}", expected[0]);
         assert_eq!(program.statements, expected);
         Ok(())
     }

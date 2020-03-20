@@ -51,16 +51,13 @@ impl fmt::Display for Expression {
 #[derive(Debug, PartialEq, Clone)]
 pub enum UnaryOperator {
     Not,
-    And,
 }
 
 impl fmt::Display for UnaryOperator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let output = match self {
-            UnaryOperator::Not => "!",
-            UnaryOperator::And => "&",
-        };
-        write!(f, "{}", output)
+        match self {
+            UnaryOperator::Not => write!(f, "!"),
+        }
     }
 }
 
@@ -70,6 +67,7 @@ pub enum BinaryOperator {
     Minus,
     Multiplication,
     Division,
+    And,
 }
 
 impl fmt::Display for BinaryOperator {
@@ -79,6 +77,7 @@ impl fmt::Display for BinaryOperator {
             BinaryOperator::Minus => "-",
             BinaryOperator::Multiplication => "*",
             BinaryOperator::Division => "/",
+            BinaryOperator::And => "&",
         };
         write!(f, "{}", output)
     }

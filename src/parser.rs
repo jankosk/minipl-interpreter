@@ -87,7 +87,6 @@ impl Parser {
 
     fn parse_expression(&mut self, is_nested: bool) -> ParseResult<Expression> {
         match self.get_current_token() {
-            Token::And => self.parse_unary(UnaryOperator::And, is_nested),
             Token::Not => self.parse_unary(UnaryOperator::Not, is_nested),
             _ => self.parse_left(is_nested),
         }
@@ -114,6 +113,7 @@ impl Parser {
                 match self.get_current_token() {
                     Token::Plus => self.parse_right(left, BinaryOperator::Plus, is_nested),
                     Token::Minus => self.parse_right(left, BinaryOperator::Minus, is_nested),
+                    Token::And => self.parse_right(left, BinaryOperator::And, is_nested),
                     invalid => Err(ParseError::UnexpectedToken(invalid)),
                 }
             }
@@ -192,7 +192,7 @@ mod tests {
             var x : int := 1 + 2;
             x := x - 1;
             var y : string := "hello";
-            var z : bool := true;
+            var z : bool := true & false;
         "#;
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
@@ -220,7 +220,15 @@ mod tests {
                 Type::String,
                 Expression::StringValue("hello".to_string()),
             ),
-            Statement::NewAssignment("z".to_string(), Type::Boolean, Expression::Boolean(true)),
+            Statement::NewAssignment(
+                "z".to_string(),
+                Type::Boolean,
+                Expression::Binary(
+                    Box::new(Expression::Boolean(true)),
+                    BinaryOperator::And,
+                    Box::new(Expression::Boolean(false)),
+                ),
+            ),
         ];
         assert_eq!(program.statements, expected);
         Ok(())

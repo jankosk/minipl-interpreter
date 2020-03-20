@@ -18,7 +18,6 @@ pub enum EvalError {
     MismatchedTypes,
     UnsupportedOperation,
     VariableNotInitialized(String),
-    SyntaxError,
 }
 
 #[derive(Debug, PartialEq, Clone)]

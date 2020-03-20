@@ -25,11 +25,7 @@ fn main() {
         Ok(program) => program,
         Err(err) => panic!("Syntax Error: {:?}", err),
     };
-
-    for statement in &program.statements {
-        println!("{}", statement);
-    }
-
+    
     let mut evaluator = Evaluator::new(program);
     match evaluator.evaluate_program() {
         Ok(_) => println!("Success!"),

@@ -1,4 +1,4 @@
-use crate::ast::{BinaryOperator, Expression, Program, Statement};
+use crate::ast::{BinaryOperator, Expression, Program, Statement, UnaryOperator};
 use crate::utils::{EvalError, Type, Value};
 use std::collections::HashMap;
 
@@ -67,15 +67,14 @@ impl Evaluator {
     fn evaluate_expression(&self, exp: &Expression) -> EvalResult<Value> {
         match exp {
             Expression::IntegerConstant(val) => Ok(Value::Integer(*val)),
+            Expression::StringValue(string) => Ok(Value::String(string.clone())),
+            Expression::Boolean(boolean) => Ok(Value::Bool(*boolean)),
             Expression::Binary(exp1, op, exp2) => self.evaluate_binary(exp1, op, exp2),
-            Expression::Identifier(id) => {
-                let tuple = self.global_scope.get(id);
-                match tuple {
-                    Some((_, val)) => Ok(val.clone()),
-                    _ => Err(EvalError::VariableNotInitialized(id.clone())),
-                }
-            }
-            _ => Err(EvalError::SyntaxError),
+            Expression::Unary(op, exp) => self.evaluate_unary(op, exp),
+            Expression::Identifier(id) => match self.global_scope.get(id) {
+                Some((_, val)) => Ok(val.clone()),
+                _ => Err(EvalError::VariableNotInitialized(id.clone())),
+            },
         }
     }
 
@@ -92,6 +91,20 @@ impl Evaluator {
                 BinaryOperator::Plus => Ok(Value::Integer(val1 + val2)),
                 BinaryOperator::Minus => Ok(Value::Integer(val1 - val2)),
                 _ => Err(EvalError::UnsupportedOperation),
+            },
+            (Value::Bool(bool1), Value::Bool(bool2)) => match op {
+                BinaryOperator::And => Ok(Value::Bool(bool1 && bool2)),
+                _ => Err(EvalError::UnsupportedOperation),
+            },
+            _ => Err(EvalError::MismatchedTypes),
+        }
+    }
+
+    fn evaluate_unary(&self, op: &UnaryOperator, exp: &Expression) -> EvalResult<Value> {
+        let val = self.evaluate_expression(&*exp)?;
+        match val {
+            Value::Bool(boolean) => match op {
+                UnaryOperator::Not => Ok(Value::Bool(!boolean)),
             },
             _ => Err(EvalError::MismatchedTypes),
         }

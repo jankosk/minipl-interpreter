@@ -83,6 +83,9 @@ pub enum BinaryOperator {
     Multiplication,
     Division,
     And,
+    Equals,
+    LessThan,
+    GreaterThan
 }
 
 impl fmt::Display for BinaryOperator {
@@ -93,6 +96,9 @@ impl fmt::Display for BinaryOperator {
             BinaryOperator::Multiplication => "*",
             BinaryOperator::Division => "/",
             BinaryOperator::And => "&",
+            BinaryOperator::Equals => "=",
+            BinaryOperator::LessThan => "<",
+            BinaryOperator::GreaterThan => ">",
         };
         write!(f, "{}", output)
     }

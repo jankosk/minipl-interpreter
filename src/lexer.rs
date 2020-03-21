@@ -93,6 +93,9 @@ impl Lexer {
             Some('!') => Token::Not,
             Some('(') => Token::LeftBracket,
             Some(')') => Token::RightBracket,
+            Some('=') => Token::Equals,
+            Some('>') => Token::GreaterThan,
+            Some('<') => Token::LessThan,
             Some('.') => {
                 if self.peek() == Some('.') {
                     self.advance();

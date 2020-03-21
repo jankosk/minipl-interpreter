@@ -137,7 +137,7 @@ impl Parser {
                 self.next_token();
                 self.expect_current_token(Token::RightBracket, ParseError::ExpectedClosingBracket)?;
                 left
-            },
+            }
             invalid => return Err(ParseError::ExpectedOperand(invalid)),
         };
         self.parse_op(left, is_nested)
@@ -152,16 +152,18 @@ impl Parser {
             Token::End => Ok(left),
             _ => {
                 self.next_token();
-                match self.get_current_token() {
-                    Token::Plus => self.parse_right(left, BinaryOperator::Plus, is_nested),
-                    Token::Minus => self.parse_right(left, BinaryOperator::Minus, is_nested),
-                    Token::Multiplication => {
-                        self.parse_right(left, BinaryOperator::Multiplication, is_nested)
-                    }
-                    Token::Division => self.parse_right(left, BinaryOperator::Division, is_nested),
-                    Token::And => self.parse_right(left, BinaryOperator::And, is_nested),
-                    invalid => Err(ParseError::UnexpectedToken(invalid)),
-                }
+                let op = match self.get_current_token() {
+                    Token::Plus => BinaryOperator::Plus,
+                    Token::Minus => BinaryOperator::Minus,
+                    Token::Multiplication => BinaryOperator::Multiplication,
+                    Token::Division => BinaryOperator::Division,
+                    Token::Equals => BinaryOperator::Equals,
+                    Token::LessThan => BinaryOperator::LessThan,
+                    Token::GreaterThan => BinaryOperator::GreaterThan,
+                    Token::And => BinaryOperator::And,
+                    invalid => return Err(ParseError::UnexpectedToken(invalid)),
+                };
+                self.parse_right(left, op, is_nested)
             }
         }
     }
@@ -289,6 +291,7 @@ mod tests {
             print (1 + 2);
             print !true;
             print 1 + (2 / (3 * 2));
+            print 1 = 1;
         "#;
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
@@ -317,6 +320,11 @@ mod tests {
                         Box::new(Expression::IntegerConstant(2)),
                     )),
                 )),
+            )),
+            Statement::Print(Expression::Binary(
+                Box::new(Expression::IntegerConstant(1)),
+                BinaryOperator::Equals,
+                Box::new(Expression::IntegerConstant(1)),
             )),
         ];
         assert_eq!(program.statements, expected);

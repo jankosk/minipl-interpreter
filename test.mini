@@ -3,5 +3,5 @@ for x in 1..(2+2) do
     print "Hello world!\n";
 end for;
 
-print !(false);
+print !(!false);
 print "\n";

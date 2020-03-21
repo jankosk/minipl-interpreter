@@ -85,11 +85,12 @@ impl Evaluator {
         };
         let (type_def, _) = self.find_assigned_variable(&id)?;
         if type_def != Type::Integer {
-            return Err(EvalError::MismatchedTypes)
+            return Err(EvalError::MismatchedTypes);
         }
         for i in start..=end {
             let loop_val = Value::Integer(i);
-            self.global_scope.insert(id.clone(), (Type::Integer, Some(loop_val)));
+            self.global_scope
+                .insert(id.clone(), (Type::Integer, Some(loop_val)));
             for stmt in stmts.clone() {
                 self.evaluate_statement(*stmt)?;
             }
@@ -128,14 +129,23 @@ impl Evaluator {
                 BinaryOperator::Minus => Ok(Value::Integer(val1 - val2)),
                 BinaryOperator::Multiplication => Ok(Value::Integer(val1 * val2)),
                 BinaryOperator::Division => Ok(Value::Integer(val1 / val2)),
+                BinaryOperator::Equals => Ok(Value::Bool(val1 == val2)),
+                BinaryOperator::LessThan => Ok(Value::Bool(val1 < val2)),
+                BinaryOperator::GreaterThan => Ok(Value::Bool(val1 > val2)),
                 _ => Err(EvalError::UnsupportedOperation),
             },
             (Value::Bool(bool1), Value::Bool(bool2)) => match op {
                 BinaryOperator::And => Ok(Value::Bool(bool1 && bool2)),
+                BinaryOperator::Equals => Ok(Value::Bool(bool1 == bool2)),
+                BinaryOperator::LessThan => Ok(Value::Bool(bool1 < bool2)),
+                BinaryOperator::GreaterThan => Ok(Value::Bool(bool1 > bool2)),
                 _ => Err(EvalError::UnsupportedOperation),
             },
             (Value::String(str1), Value::String(str2)) => match op {
                 BinaryOperator::Plus => Ok(Value::String(str1 + &str2)),
+                BinaryOperator::Equals => Ok(Value::Bool(str1 == str2)),
+                BinaryOperator::LessThan => Ok(Value::Bool(str1 < str2)),
+                BinaryOperator::GreaterThan => Ok(Value::Bool(str1 > str2)),
                 _ => Err(EvalError::UnsupportedOperation),
             },
             _ => Err(EvalError::MismatchedTypes),

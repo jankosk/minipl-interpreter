@@ -125,15 +125,22 @@ impl Parser {
     }
 
     fn parse_left(&mut self, is_nested: bool) -> ParseResult<Expression> {
-        let exp = match self.get_current_token() {
+        let left = match self.get_current_token() {
             Token::Identifier(id) => Expression::Identifier(id),
             Token::IntegerConstant(int) => Expression::IntegerConstant(int.parse::<i32>().unwrap()),
             Token::StringValue(string) => Expression::StringValue(string),
             Token::True => Expression::Boolean(true),
             Token::False => Expression::Boolean(false),
+            Token::LeftBracket => {
+                self.next_token();
+                let left = self.parse_expression(true)?;
+                self.next_token();
+                self.expect_current_token(Token::RightBracket, ParseError::ExpectedClosingBracket)?;
+                left
+            },
             invalid => return Err(ParseError::ExpectedOperand(invalid)),
         };
-        self.parse_op(exp, is_nested)
+        self.parse_op(left, is_nested)
     }
 
     fn parse_op(&mut self, left: Expression, is_nested: bool) -> ParseResult<Expression> {
@@ -279,7 +286,7 @@ mod tests {
     fn parse_print() -> Result<(), ParseError> {
         let source = r#"
             print "hello";
-            print 1 + 2;
+            print (1 + 2);
             print !true;
             print 1 + (2 / (3 * 2));
         "#;

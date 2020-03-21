@@ -1,4 +1,7 @@
 var x : int;
-for x in 1..3 do
+for x in 1..(2+2) do
     print "Hello world!\n";
 end for;
+
+print !(false);
+print "\n";

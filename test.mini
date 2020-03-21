@@ -1,7 +1,8 @@
 var x : int;
+var X: int;
 for x in 1..(2+2) do
     print "Hello world!\n";
 end for;
 
-print (1+1) * 2;
-print "\n";
+assert (x = (1 + 3));
+assert (true = (!false)); 

@@ -33,6 +33,7 @@ impl Evaluator {
             Statement::VarInitialization(id, type_def) => self.evaluate_var_init(id, type_def),
             Statement::Assignment(id, exp) => self.evaluate_assignment(id, exp),
             Statement::Print(exp) => self.evaluate_print(exp),
+            Statement::Assert(exp) => self.evaluate_assert(exp),
             Statement::For(id, start, end, stmts) => self.evaluate_for(id, start, end, stmts),
         }
     }
@@ -66,6 +67,18 @@ impl Evaluator {
         let val = self.evaluate_expression(exp)?;
         print!("{}", val);
         Ok(())
+    }
+
+    fn evaluate_assert(&mut self, exp: Expression) -> EvalResult<()> {
+        let val = self.evaluate_expression(exp.clone())?;
+        match val {
+            Value::Bool(boolean) if !boolean => {
+                println!("Assertion failed: {}", &exp);
+                Ok(())
+            },
+            Value::Bool(_) => Ok(()),
+            _ => return Err(EvalError::MismatchedTypes)
+        }
     }
 
     fn evaluate_for(

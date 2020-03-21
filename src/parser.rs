@@ -37,6 +37,8 @@ impl Parser {
         match self.get_current_token() {
             Token::Identifier(_) => self.parse_assignment(),
             Token::Var => self.parse_new_assignment(),
+            Token::For => self.parse_for(),
+            Token::Assert => self.parse_assert(),
             Token::Print => {
                 self.next_token();
                 let exp = self.parse_expression()?;
@@ -44,7 +46,6 @@ impl Parser {
                 self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
                 Ok(Statement::Print(exp))
             }
-            Token::For => self.parse_for(),
             other => Err(ParseError::UnexpectedToken(other)),
         }
     }
@@ -117,6 +118,17 @@ impl Parser {
         Ok(Statement::NewAssignment(identifier, type_def, exp))
     }
 
+    fn parse_assert(&mut self) -> ParseResult<Statement> {
+        self.next_token();
+        self.expect_and_advance(Token::LeftBracket, ParseError::ExpectedLeftBracket)?;
+        let exp = self.parse_expression()?;
+        self.next_token();
+        self.expect_current_token(Token::RightBracket, ParseError::ExpectedClosingBracket)?;
+        self.next_token();
+        self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
+        Ok(Statement::Assert(exp))
+    }
+
     fn parse_expression(&mut self) -> ParseResult<Expression> {
         match self.get_current_token() {
             Token::Not => self.parse_unary(UnaryOperator::Not),
@@ -168,11 +180,7 @@ impl Parser {
         }
     }
 
-    fn parse_right(
-        &mut self,
-        left_exp: Expression,
-        op: BinaryOperator
-    ) -> ParseResult<Expression> {
+    fn parse_right(&mut self, left_exp: Expression, op: BinaryOperator) -> ParseResult<Expression> {
         self.next_token();
         if self.current_token == Token::LeftBracket {
             self.next_token();

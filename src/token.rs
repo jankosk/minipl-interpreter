@@ -25,6 +25,7 @@ pub enum Token {
     Do,
     End,
     Range,
+    Assert,
     LeftBracket,
     RightBracket,
     SemiColon,
@@ -62,6 +63,7 @@ impl fmt::Display for Token {
             Token::Do => "do",
             Token::End => "end",
             Token::Range => "..",
+            Token::Assert => "assert",
             Token::True => "true",
             Token::False => "false",
             Token::BooleanType => "bool",
@@ -87,6 +89,7 @@ pub fn get_id_or_key_token(lexeme: &str) -> Token {
         "bool" => Token::BooleanType,
         "string" => Token::StringType,
         "int" => Token::IntegerType,
+        "assert" => Token::Assert,
         id => Token::Identifier(String::from(id)),
     }
 }

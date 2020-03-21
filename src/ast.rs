@@ -8,6 +8,7 @@ pub struct Program {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
+    VarInitialization(String, Type),
     NewAssignment(String, Type, Expression),
     Assignment(String, Expression),
     Print(Expression),
@@ -17,6 +18,7 @@ pub enum Statement {
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Statement::VarInitialization(id, type_def) => write!(f, "var {} : {};", id, type_def),
             Statement::NewAssignment(id, type_def, exp) => {
                 write!(f, "var {} : {} := {};", id, type_def, exp)
             }

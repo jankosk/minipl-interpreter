@@ -106,6 +106,10 @@ impl Parser {
         };
         self.next_token();
 
+        if self.current_token == Token::SemiColon {
+            return Ok(Statement::VarInitialization(identifier, type_def));
+        }
+
         self.expect_and_advance(Token::Assign, ParseError::ExpectedAssignment)?;
         let exp = self.parse_expression(false)?;
         self.next_token();
@@ -237,7 +241,7 @@ mod tests {
             var x : int := 1 + 2;
             x := x - 1;
             var y : string := "hello";
-            var z : bool := true & false;
+            var z : bool;
         "#;
         let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer);
@@ -265,15 +269,7 @@ mod tests {
                 Type::String,
                 Expression::StringValue("hello".to_string()),
             ),
-            Statement::NewAssignment(
-                "z".to_string(),
-                Type::Boolean,
-                Expression::Binary(
-                    Box::new(Expression::Boolean(true)),
-                    BinaryOperator::And,
-                    Box::new(Expression::Boolean(false)),
-                ),
-            ),
+            Statement::VarInitialization("z".to_string(), Type::Boolean),
         ];
         assert_eq!(program.statements, expected);
         Ok(())

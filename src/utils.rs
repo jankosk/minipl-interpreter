@@ -22,6 +22,7 @@ pub enum EvalError {
     MismatchedTypes,
     UnsupportedOperation,
     VariableNotInitialized(String),
+    VariableAlreadyInitialized(String),
 }
 
 #[derive(Debug, PartialEq, Clone)]

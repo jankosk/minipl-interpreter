@@ -45,6 +45,13 @@ impl Parser {
                 self.next_token();
                 self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
                 Ok(Statement::Print(exp))
+            },
+            Token::Read => {
+                self.next_token();
+                let identifier = self.parse_identifier()?;
+                self.next_token();
+                self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
+                Ok(Statement::Read(identifier))
             }
             other => Err(ParseError::UnexpectedToken(other)),
         }
@@ -259,7 +266,7 @@ mod tests {
             var y : string := "hello";
             var z : bool;
         "#;
-        let lexer = Lexer::new(&source);
+        let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         let expected = vec![
@@ -300,7 +307,7 @@ mod tests {
             print 1 + (2 / (3 * 2));
             print 1 = 1;
         "#;
-        let lexer = Lexer::new(&source);
+        let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
 
         let program = parser.parse_program()?;
@@ -346,7 +353,7 @@ mod tests {
                 print "hello";
             end for;
         "#;
-        let lexer = Lexer::new(&source);
+        let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         let expected = vec![Statement::For(
@@ -368,7 +375,7 @@ mod tests {
     #[test]
     fn report_error() {
         let source = "print 1);";
-        let lexer = Lexer::new(&source);
+        let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
         let err = parser.parse_program().unwrap_err();
         assert_eq!(ParseError::ExpectedSemiColon(Token::RightBracket), err);

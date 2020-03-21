@@ -1,8 +1,8 @@
 var x : int;
-var X: int;
 for x in 1..(2+2) do
     print "Hello world!\n";
 end for;
 
-assert (x = (1 + 3));
-assert (true = (!false)); 
+var X : int;
+read X;
+print X + 5;

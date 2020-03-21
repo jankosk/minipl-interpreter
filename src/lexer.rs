@@ -7,11 +7,12 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(source: &str) -> Self {
+    pub fn new(source: String) -> Self {
+        let src = source.trim();
         Lexer {
-            source: source.to_string(),
+            source: src.to_string(),
             position: 0,
-            current_char: source.chars().next(),
+            current_char: src.chars().next(),
         }
     }
 
@@ -152,7 +153,7 @@ mod tests {
                 print x;
             end for
         "#;
-        let mut lexer = Lexer::new(&source);
+        let mut lexer = Lexer::new(source.to_string());
         let expected_tokens = vec![
             Token::Var,
             Token::Identifier("x".to_string()),

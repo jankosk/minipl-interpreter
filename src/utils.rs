@@ -24,6 +24,7 @@ pub enum EvalError {
     UnsupportedOperation,
     VariableNotInitialized(String),
     VariableAlreadyInitialized(String),
+    IOError(String),
 }
 
 #[derive(Debug, PartialEq, Clone)]

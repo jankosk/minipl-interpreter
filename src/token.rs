@@ -18,6 +18,7 @@ pub enum Token {
     Colon,
     True,
     False,
+    Read,
     And,
     Not,
     For,
@@ -64,6 +65,7 @@ impl fmt::Display for Token {
             Token::End => "end",
             Token::Range => "..",
             Token::Assert => "assert",
+            Token::Read => "read",
             Token::True => "true",
             Token::False => "false",
             Token::BooleanType => "bool",
@@ -90,6 +92,7 @@ pub fn get_id_or_key_token(lexeme: &str) -> Token {
         "string" => Token::StringType,
         "int" => Token::IntegerType,
         "assert" => Token::Assert,
+        "read" => Token::Read,
         id => Token::Identifier(String::from(id)),
     }
 }

@@ -13,6 +13,7 @@ pub enum Statement {
     Assignment(String, Expression),
     Print(Expression),
     Assert(Expression),
+    Read(String),
     For(String, Expression, Expression, Vec<Box<Statement>>),
 }
 
@@ -22,7 +23,8 @@ impl fmt::Display for Statement {
             Statement::VarInitialization(id, type_def) => write!(f, "var {} : {};", id, type_def),
             Statement::NewAssignment(id, type_def, exp) => {
                 write!(f, "var {} : {} := {};", id, type_def, exp)
-            }
+            },
+            Statement::Read(id) => write!(f, "read {}", id),
             Statement::Assignment(id, exp) => write!(f, "{} := {};", id, exp),
             Statement::Print(exp) => write!(f, "print {};", exp),
             Statement::Assert(exp) => write!(f, "assert ({});", exp),

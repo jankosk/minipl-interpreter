@@ -1,6 +1,7 @@
 use crate::ast::{BinaryOperator, Expression, Program, Statement, UnaryOperator};
 use crate::utils::{EvalError, Type, Value};
 use std::collections::HashMap;
+use std::io;
 
 type EvalResult<T> = Result<T, EvalError>;
 type GlobalVar = (Type, Option<Value>);
@@ -34,6 +35,7 @@ impl Evaluator {
             Statement::Assignment(id, exp) => self.evaluate_assignment(id, exp),
             Statement::Print(exp) => self.evaluate_print(exp),
             Statement::Assert(exp) => self.evaluate_assert(exp),
+            Statement::Read(id) => self.evaluate_read(id),
             Statement::For(id, start, end, stmts) => self.evaluate_for(id, start, end, stmts),
         }
     }
@@ -69,15 +71,38 @@ impl Evaluator {
         Ok(())
     }
 
+    fn evaluate_read(&mut self, id: String) -> EvalResult<()> {
+        let (type_def, _) = self.find_assigned_variable(&id)?;
+        let input = self.get_input()?;
+        match type_def {
+            Type::String => {
+                let val = Value::String(input);
+                self.global_scope.insert(id, (type_def, Some(val)));
+            }
+            Type::Integer => {
+                let parsed = input.trim().parse::<i32>();
+                match parsed {
+                    Ok(int) => {
+                        let val = Value::Integer(int);
+                        self.global_scope.insert(id, (type_def, Some(val)));
+                    }
+                    Err(_) => return Err(EvalError::MismatchedTypes),
+                }
+            }
+            _ => return Err(EvalError::MismatchedTypes),
+        };
+        Ok(())
+    }
+
     fn evaluate_assert(&mut self, exp: Expression) -> EvalResult<()> {
         let val = self.evaluate_expression(exp.clone())?;
         match val {
             Value::Bool(boolean) if !boolean => {
                 println!("Assertion failed: {}", &exp);
                 Ok(())
-            },
+            }
             Value::Bool(_) => Ok(()),
-            _ => return Err(EvalError::MismatchedTypes)
+            _ => return Err(EvalError::MismatchedTypes),
         }
     }
 
@@ -190,6 +215,14 @@ impl Evaluator {
                 self.global_scope.insert(id, (type_def, val));
                 Ok(())
             }
+        }
+    }
+
+    fn get_input(&mut self) -> EvalResult<String> {
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => Ok(input),
+            Err(err) => Err(EvalError::IOError(err.to_string())),
         }
     }
 

@@ -1,7 +1,7 @@
 use crate::ast::{BinaryOperator, Expression, Program, Statement, UnaryOperator};
 use crate::utils::{EvalError, Type, Value};
 use std::collections::HashMap;
-use std::io;
+use std::io::{stdout, stdin, Write};
 
 type EvalResult<T> = Result<T, EvalError>;
 type GlobalVar = (Type, Option<Value>);
@@ -68,6 +68,7 @@ impl Evaluator {
     fn evaluate_print(&mut self, exp: Expression) -> EvalResult<()> {
         let val = self.evaluate_expression(exp)?;
         print!("{}", val);
+        stdout().flush().unwrap();
         Ok(())
     }
 
@@ -220,7 +221,7 @@ impl Evaluator {
 
     fn get_input(&mut self) -> EvalResult<String> {
         let mut input = String::new();
-        match io::stdin().read_line(&mut input) {
+        match stdin().read_line(&mut input) {
             Ok(_) => Ok(input),
             Err(err) => Err(EvalError::IOError(err.to_string())),
         }

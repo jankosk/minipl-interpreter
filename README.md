@@ -5,10 +5,10 @@ It contains a few statements, arithmetic expressions, and some IO primitives. Th
 ## Sample program
 ```
 var X : int := 1 + (2 * 6);
-assert X < 11;
+assert (12 > X);
 
 var n : int := 0;
-print "How many times?";
+print "How many times? ";
 read n;
 var x : int;
 for x in 0..n do

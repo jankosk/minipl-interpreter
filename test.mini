@@ -1,8 +1,11 @@
-var x : int;
-for x in 1..(2+2) do
-    print "Hello world!\n";
-end for;
+var X : int := 1 + (2 * 6);
+assert (12 > X);
 
-var X : int;
-read X;
-print X + 5;
+var n : int := 0;
+print "How many times? ";
+read n;
+var x : int;
+for x in 0..n do
+    print "Hello, World!\n";
+end for;
+assert (x = n);

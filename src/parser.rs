@@ -9,6 +9,7 @@ pub struct Parser {
     lexer: Lexer,
     current_token: Token,
     peek_token: Token,
+    errors: Vec<ParseError>,
 }
 
 impl Parser {
@@ -17,20 +18,31 @@ impl Parser {
             lexer,
             current_token: Token::EOF,
             peek_token: Token::EOF,
+            errors: Vec::new(),
         };
         parser.next_token();
         parser.next_token();
         parser
     }
 
-    pub fn parse_program(&mut self) -> ParseResult<Program> {
+    pub fn get_errors(&self) -> &[ParseError] {
+        &self.errors
+    }
+
+    pub fn parse_program(&mut self) -> Program {
         let mut statements: Vec<Statement> = Vec::new();
         while self.current_token != Token::EOF {
-            let statement = self.parse_statement()?;
-            statements.push(statement);
+            match self.parse_statement() {
+                Ok(stmt) => {
+                    statements.push(stmt);
+                }
+                Err(err) => {
+                    self.errors.push(err);
+                }
+            };
             self.next_token();
         }
-        Ok(Program { statements })
+        Program { statements }
     }
 
     fn parse_statement(&mut self) -> ParseResult<Statement> {
@@ -259,7 +271,7 @@ mod tests {
         "#;
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
-        let program = parser.parse_program()?;
+        let program = parser.parse_program();
         let expected = vec![
             Statement::NewAssignment(
                 "x".to_string(),
@@ -301,7 +313,7 @@ mod tests {
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program()?;
+        let program = parser.parse_program();
         let expected = vec![
             Statement::Print(Expression::StringValue("hello".to_string())),
             Statement::Print(Expression::Binary(
@@ -346,7 +358,7 @@ mod tests {
         "#;
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
-        let program = parser.parse_program()?;
+        let program = parser.parse_program();
         let expected = vec![Statement::For(
             "x".to_string(),
             Expression::IntegerConstant(1),
@@ -368,7 +380,11 @@ mod tests {
         let source = "print 1);";
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
-        let err = parser.parse_program().unwrap_err();
-        assert_eq!(ParseError::ExpectedSemiColon(Token::RightBracket), err);
+        parser.parse_program();
+        let errors = parser.get_errors();
+        assert_eq!(
+            true,
+            errors.contains(&ParseError::ExpectedSemiColon(Token::RightBracket))
+        );
     }
 }

@@ -33,13 +33,15 @@ fn main() {
     let lexer = Lexer::new(file);
     let mut parser = Parser::new(lexer);
 
-    let program = match parser.parse_program() {
-        Ok(program) => program,
-        Err(err) => {
-            println!("Syntax Error: {:?}", err);
-            process::exit(1);
+    let program = parser.parse_program();
+    
+    let syntax_errors = parser.get_errors();
+    if !syntax_errors.is_empty() {
+        for err in syntax_errors {
+            println!("Syntax error: {:?}", err);
         }
-    };
+        process::exit(1);
+    }
 
     let mut evaluator = Evaluator::new(program);
     match evaluator.evaluate_program() {

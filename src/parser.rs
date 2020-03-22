@@ -45,7 +45,7 @@ impl Parser {
                 self.next_token();
                 self.expect_current_token(Token::SemiColon, ParseError::ExpectedSemiColon)?;
                 Ok(Statement::Print(exp))
-            },
+            }
             Token::Read => {
                 self.next_token();
                 let identifier = self.parse_identifier()?;
@@ -189,18 +189,9 @@ impl Parser {
 
     fn parse_right(&mut self, left_exp: Expression, op: BinaryOperator) -> ParseResult<Expression> {
         self.next_token();
-        if self.current_token == Token::LeftBracket {
-            self.next_token();
-            let right_exp = self.parse_expression()?;
-            self.next_token();
-            self.expect_current_token(Token::RightBracket, ParseError::ExpectedClosingBracket)?;
-            let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
-            Ok(exp)
-        } else {
-            let right_exp = self.parse_left()?;
-            let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
-            Ok(exp)
-        }
+        let right_exp = self.parse_left()?;
+        let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
+        Ok(exp)
     }
 
     fn parse_unary(&mut self, op: UnaryOperator) -> ParseResult<Expression> {

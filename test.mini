@@ -9,3 +9,6 @@ for x in 0..n do
     print "Hello, World!\n";
 end for;
 assert (x = n);
+
+X := (1 + 1) + (2 * (6 - (4 + 2)));
+print X;

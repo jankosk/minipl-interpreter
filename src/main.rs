@@ -1,6 +1,4 @@
-use std::env;
-use std::fs;
-use std::process;
+extern crate regex;
 
 mod ast;
 mod evaluator;
@@ -12,6 +10,9 @@ mod utils;
 use evaluator::Evaluator;
 use lexer::Lexer;
 use parser::Parser;
+use std::env;
+use std::fs;
+use std::process;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -34,7 +35,6 @@ fn main() {
     let mut parser = Parser::new(lexer);
 
     let program = parser.parse_program();
-    
     let syntax_errors = parser.get_errors();
     if !syntax_errors.is_empty() {
         for err in syntax_errors {

@@ -1,4 +1,5 @@
 use crate::token::{get_id_or_key_token, Token};
+use regex::Regex;
 
 pub struct Lexer {
     position: usize,
@@ -36,7 +37,9 @@ impl Lexer {
 
     fn read_identifier(&mut self) -> String {
         let mut lexeme = String::new();
-        while self.peek() != None && self.peek().unwrap().is_alphabetic() {
+        let id_pattern = Regex::new(r"[a-zA-Z0-9_]+").unwrap();
+        let is_match = |ch: char| id_pattern.is_match(&ch.to_string());
+        while self.peek() != None && is_match(self.peek().unwrap()) {
             lexeme.push(self.current_char.unwrap());
             self.advance();
         }

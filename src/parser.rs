@@ -266,8 +266,8 @@ mod tests {
         let source = r#"
             var x : int := 1 + 2;
             x := x - 1;
-            var y : string := "hello";
-            var z : bool;
+            var yY_1 : string := "hello";
+            var Zz2_ : bool;
         "#;
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
@@ -291,11 +291,11 @@ mod tests {
                 ),
             ),
             Statement::NewAssignment(
-                "y".to_string(),
+                "yY_1".to_string(),
                 Type::String,
                 Expression::StringValue("hello".to_string()),
             ),
-            Statement::VarInitialization("z".to_string(), Type::Boolean),
+            Statement::VarInitialization("Zz2_".to_string(), Type::Boolean),
         ];
         assert_eq!(program.statements, expected);
         Ok(())

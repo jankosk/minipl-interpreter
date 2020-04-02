@@ -13,15 +13,13 @@ use parser::Parser;
 use std::env;
 use std::fs;
 use std::process;
+use utils::EvalError;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let file_path = match args.get(1) {
         Some(path) => path,
-        None => {
-            println!("Missing file path argument!");
-            process::exit(1);
-        }
+        None => "",
     };
     let file = match fs::read_to_string(file_path) {
         Ok(file) => file,
@@ -31,27 +29,34 @@ fn main() {
         }
     };
 
-    let lexer = Lexer::new(file);
-    let mut parser = Parser::new(lexer);
-
-    let program = parser.parse_program();
-    let syntax_errors = parser.get_errors();
-    if !syntax_errors.is_empty() {
-        for err in syntax_errors {
-            println!("Syntax error: {:?}", err);
-        }
-        process::exit(1);
-    }
-
-    let mut evaluator = Evaluator::new(program);
-    match evaluator.evaluate_program() {
+    match interpret(file) {
         Ok(_) => {
             println!("\nSuccess!");
             process::exit(0);
         }
         Err(err) => {
-            println!("\nFailed with error: {:?}", err);
+            println!("\n{}", err);
             process::exit(1);
+        }
+    }
+}
+
+fn interpret(file: String) -> Result<(), EvalError> {
+    let lexer = Lexer::new(file);
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    let syntax_errors = parser.get_errors();
+    match syntax_errors.is_empty() {
+        false => {
+            for err in syntax_errors {
+                println!("{}", err);
+            }
+            Err(EvalError::SyntaxError)
+        }
+        _ => {
+            let mut evaluator = Evaluator::new(program);
+            evaluator.evaluate_program()
         }
     }
 }

@@ -24,7 +24,7 @@ fn main() {
     let file = match fs::read_to_string(file_path) {
         Ok(file) => file,
         _ => {
-            println!("File {} not found!", file_path);
+            eprintln!("File {} not found!", file_path);
             process::exit(1);
         }
     };
@@ -35,7 +35,7 @@ fn main() {
             process::exit(0);
         }
         Err(err) => {
-            println!("\n{}", err);
+            eprintln!("\n{}", err);
             process::exit(1);
         }
     }
@@ -50,7 +50,7 @@ fn interpret(file: String) -> Result<(), EvalError> {
     match syntax_errors.is_empty() {
         false => {
             for err in syntax_errors {
-                println!("{}", err);
+                eprintln!("{}", err);
             }
             Err(EvalError::SyntaxError)
         }

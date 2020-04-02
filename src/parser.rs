@@ -151,12 +151,32 @@ impl Parser {
     fn parse_expression(&mut self) -> ParseResult<Expression> {
         match self.get_current_token() {
             Token::Not => self.parse_unary(UnaryOperator::Not),
-            _ => self.parse_left(),
+            _ => self.parse_binary(),
         }
     }
 
-    fn parse_left(&mut self) -> ParseResult<Expression> {
-        let left = match self.get_current_token() {
+    fn parse_binary(&mut self) -> ParseResult<Expression> {
+        let left = self.parse_operand()?;
+        if self.is_end_of_exp() {
+            return Ok(left)
+        }
+        self.next_token();
+        let op = self.parse_op()?;
+        self.next_token();
+        let right = self.parse_operand()?;
+        let exp = Expression::Binary(Box::new(left), op, Box::new(right));
+        Ok(exp)
+    }
+
+    fn parse_unary(&mut self, op: UnaryOperator) -> ParseResult<Expression> {
+        self.next_token();
+        let exp = self.parse_binary()?;
+        let exp = Expression::Unary(op, Box::new(exp));
+        Ok(exp)
+    }
+
+    fn parse_operand(&mut self) -> ParseResult<Expression> {
+        let operand = match self.get_current_token() {
             Token::Identifier(id) => Expression::Identifier(id),
             Token::IntegerConstant(int) => Expression::IntegerConstant(int.parse::<i32>().unwrap()),
             Token::StringValue(string) => Expression::StringValue(string),
@@ -164,59 +184,45 @@ impl Parser {
             Token::False => Expression::Boolean(false),
             Token::LeftBracket => {
                 self.next_token();
-                let left = self.parse_expression()?;
+                let exp = self.parse_expression()?;
                 self.next_token();
                 self.expect_current_token(Token::RightBracket, ParseError::ExpectedClosingBracket)?;
-                left
+                exp
             }
             invalid => return Err(ParseError::ExpectedOperand(invalid)),
         };
-        self.parse_op(left)
+        Ok(operand)
     }
 
-    fn parse_op(&mut self, left: Expression) -> ParseResult<Expression> {
-        match self.peek_token {
-            Token::SemiColon => Ok(left),
-            Token::RightBracket => Ok(left),
-            Token::Range => Ok(left),
-            Token::Do => Ok(left),
-            Token::End => Ok(left),
-            _ => {
-                self.next_token();
-                let op = match self.get_current_token() {
-                    Token::Plus => BinaryOperator::Plus,
-                    Token::Minus => BinaryOperator::Minus,
-                    Token::Multiplication => BinaryOperator::Multiplication,
-                    Token::Division => BinaryOperator::Division,
-                    Token::Equals => BinaryOperator::Equals,
-                    Token::LessThan => BinaryOperator::LessThan,
-                    Token::GreaterThan => BinaryOperator::GreaterThan,
-                    Token::And => BinaryOperator::And,
-                    invalid => return Err(ParseError::UnexpectedToken(invalid)),
-                };
-                self.parse_right(left, op)
-            }
-        }
-    }
-
-    fn parse_right(&mut self, left_exp: Expression, op: BinaryOperator) -> ParseResult<Expression> {
-        self.next_token();
-        let right_exp = self.parse_left()?;
-        let exp = Expression::Binary(Box::new(left_exp), op, Box::new(right_exp));
-        Ok(exp)
-    }
-
-    fn parse_unary(&mut self, op: UnaryOperator) -> ParseResult<Expression> {
-        self.next_token();
-        let exp = self.parse_left()?;
-        let exp = Expression::Unary(op, Box::new(exp));
-        Ok(exp)
+    fn parse_op(&mut self) -> ParseResult<BinaryOperator> {
+        match self.get_current_token() {
+            Token::Plus => Ok(BinaryOperator::Plus),
+            Token::Minus => Ok(BinaryOperator::Minus),
+            Token::Multiplication => Ok(BinaryOperator::Multiplication),
+            Token::Division => Ok(BinaryOperator::Division),
+            Token::Equals => Ok(BinaryOperator::Equals),
+            Token::LessThan => Ok(BinaryOperator::LessThan),
+            Token::GreaterThan => Ok(BinaryOperator::GreaterThan),
+            Token::And => Ok(BinaryOperator::And),
+            invalid => Err(ParseError::UnexpectedToken(invalid)),
+        }        
     }
 
     fn parse_identifier(&mut self) -> ParseResult<String> {
         match self.get_current_token() {
             Token::Identifier(id) => Ok(id.to_string()),
             invalid => Err(ParseError::ExpectedIdentifier(invalid.clone())),
+        }
+    }
+
+    fn is_end_of_exp(&self) -> bool {
+        match self.peek_token {
+            Token::SemiColon => true,
+            Token::RightBracket => true,
+            Token::Range => true,
+            Token::Do => true,
+            Token::End => true,
+            _ => false
         }
     }
 
